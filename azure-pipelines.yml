@@ -1,0 +1,69 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+  
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+
+  acrName: acrincident12345
+
+stages:
+
+- stage: Build
+
+  jobs:
+
+  - job: BuildPush
+
+    steps:
+
+    - task: Docker@2
+
+      inputs:
+
+        command: buildAndPush
+
+        repository: backend
+
+        dockerfile: backend/Dockerfile
+
+        containerRegistry:
+          ACR-ServiceConnection
+
+        tags: |
+          $(Build.BuildId)
+
+- stage: DeployAKS
+
+  dependsOn: Build
+
+  jobs:
+
+  - deployment: AKSDeploy
+
+    environment: dev
+
+    strategy:
+      runOnce:
+
+        deploy:
+
+          steps:
+
+          - task: KubernetesManifest@1
+
+            inputs:
+
+              action: deploy
+
+              manifests: |
+
+                kubernetes/deployment.yaml
+
